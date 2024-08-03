@@ -12,6 +12,10 @@ export -f uname
 whoami() { echo "root"; }
 export -f whoami
 
+# bypasses root check
+id() { echo "0"; }
+export -f id
+
 skip_if_not_root() {
     if [ "$EUID" -ne 0 ]; then
         skip "Must be root for this test."
