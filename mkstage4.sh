@@ -14,10 +14,10 @@ compressTypes=(
 )
 declare -A compressAvail
 for ext in "${!compressTypes[@]}"; do
-	for exe in ${compressTypes[${ext}]}; do
-		BIN=$(command -v "${exe}")
-		if [[ -n "$BIN" ]]; then
-			compressAvail+=(["${ext}"]="$BIN")
+	for exechk in ${compressTypes[${ext}]}; do
+		binchk=$(command -v "${exechk}")
+		if [[ -n "$binchk" ]]; then
+			compressAvail+=(["${ext}"]="$binchk")
 		fi
 	done
 done
@@ -25,7 +25,7 @@ done
 # set flag variables to null/default
 optExcludeBoot=false
 optExcludeConfidential=false
-optExcludeLost=false
+optExcludeLost=true
 optQuiet=false
 optUserExclude=()
 optUserInclude=()
@@ -35,16 +35,16 @@ optSeperateKernel=false
 
 function showHelp() {
 	echo "Usage:"
-	echo "$(basename "$0") [-b -c -k -l -q] [-C <type>] [-s || -t <target>] [-e <exclude*>] [-i <include>] <archivename> [additional-tar-options]"
+	echo "$(basename "$0") [-b -c -k -l -q] [-C <type>] [-s || -t <target>] [-e <exclude*>] [-i <include>] <archivename> [-- [additional-tar-options]]"
 	echo 
 	echo "-b           excludes boot directory"
 	echo "-c           excludes some confidential files (currently only .bash_history and connman network lists)"
 	echo "-k           separately save current kernel modules and src (creates smaller targetArchives and saves decompression time)"
-	echo "-l           excludes lost+found directory"
+	echo "-l           includes lost+found directory"
 	echo "-q           activates quiet mode (no confirmation)"
 	echo "-C <type>    specify tar compression (default: ${optCompressType}, available: ${!compressAvail[*]})"
-	echo "-s           makes tarball of current system"
-	echo "-t <path>    makes tarball of system located at the <targetPath-mountpoint>"
+	echo "-s           makes archive of current system"
+	echo "-t <path>    makes archive of system located at the <path>"
 	echo "-e <exclude> an additional exclude directory (one dir one -e, do not use it with *)"
 	echo "-i <include> an additional include. This has higher precedence than -e, -t, and -s"
 	echo "-h           display this help message."
@@ -84,7 +84,7 @@ while [[ $# -gt 0 ]]; do
 			k)	optSeperateKernel=true;;
 			c)	optExcludeConfidential=true;;
 			b)	optExcludeBoot=true;;
-			l)	optExcludeLost=true;;
+			l)	optExcludeLost=false;;
 			e)	optUserExclude+=("${OPTARG}");;
 			i)	optUserInclude+=("$OPTARG");;
 			h)	showHelp 0;;
@@ -107,10 +107,9 @@ while [[ $# -gt 0 ]]; do
 done
 
 # checks if run as root:
-#if [[ "$(whoami)" != 'root' ]]
-#then
-#	echo "$(basename "$0"): must be root."
-#	exit 1
+#if [[ "$(id -u)" -ne 0 ]]; then
+#	echo "$(basename "$0"): must run as root"
+#	exit 250
 #fi
 
 if [[ -z "$targetPath" ]]; then
@@ -148,7 +147,7 @@ fi
 
 # Check if specified type is available
 if [[ -z "${compressAvail[$optCompressType]}" ]]; then
-	echo "$(basename "$0"): specified targetArchive compression type not supported."
+	echo "$(basename "$0"): specified archive compression type not supported."
 	echo "Supported: ${compressAvail[*]}"
 	exit 1
 fi
@@ -183,6 +182,7 @@ tarExcludes=(
 	"var/lib/machines/*"
 	"var/lib/libvirt/*"
 	"var/lib/lxd/*"
+	"home/*/*"
 )
 
 tarExcludesPortage=(
@@ -203,7 +203,11 @@ tarExcludes=("${tarExcludes[@]/#/"$targetPath"}")
 tarIncludes=("${tarIncludes[@]/#/"$targetPath"}")
 
 if [[ "$targetPath" == '/' ]]; then
-	tarExcludes+=("$(realpath "$stage4Filename")")
+	tarExcludes+=("$(realpath "${stage4Filename}")*")
+	#if $optSeperateKernel; then
+	#	tarExcludes+=("$(realpath "${stage4Filename}.ksrc.${stage4Ext}")")
+	#	tarExcludes+=("$(realpath "${stage4Filename}.kmod.${stage4Ext}")")
+	#fi
 	if command -v portageq &>/dev/null; then
 		portageRepos=$(portageq get_repos /)
 		for i in ${portageRepos}; do
@@ -253,6 +257,7 @@ tarOptions=(
 )
 
 tarOptions+=("${tarArgs[@]}")
+
 
 # if not in optQuiet mode, this message will be displayed:
 if ! $optQuiet; then
