@@ -35,19 +35,23 @@ optSeperateKernel=false
 
 function showHelp() {
 	echo "Usage:"
-	echo "$(basename "$0") [-b -c -k -l -q] [-C <type>] [-s || -t <target>] [-e <exclude*>] [-i <include>] <archivename> [-- [additional-tar-options]]"
+	echo "$(basename "$0") [-b -c -k -l -q] [-C <type>] [-s || -t <target>] [-e <exclude>...] [-i <include>...] <archive> [-- [tar-opts]]"
+	echo "Position Arguments:"
+	echo "    <archive>    archive name to create with optional path"
+	echo "    [tar-opts]   additional options to pass to tar command"
 	echo 
-	echo "-b           excludes boot directory"
-	echo "-c           excludes some confidential files (currently only .bash_history and connman network lists)"
-	echo "-k           separately save current kernel modules and src (creates smaller targetArchives and saves decompression time)"
-	echo "-l           includes lost+found directory"
-	echo "-q           activates quiet mode (no confirmation)"
-	echo "-C <type>    specify tar compression (default: ${optCompressType}, available: ${!compressAvail[*]})"
-	echo "-s           makes archive of current system"
-	echo "-t <path>    makes archive of system located at the <path>"
-	echo "-e <exclude> an additional exclude directory (one dir one -e, do not use it with *)"
-	echo "-i <include> an additional include. This has higher precedence than -e, -t, and -s"
-	echo "-h           display this help message."
+	echo "Options:"
+	echo "    -b           excludes boot directory"
+	echo "    -c           excludes some confidential files (currently only .bash_history and connman network lists)"
+	echo "    -k           separately save current kernel modules and src (creates smaller targetArchives and saves decompression time)"
+	echo "    -l           includes lost+found directory"
+	echo "    -q           activates quiet mode (no confirmation)"
+	echo "    -C <type>    specify tar compression (default: ${optCompressType}, available: ${!compressAvail[*]})"
+	echo "    -s           makes archive of current system"
+	echo "    -t <path>    makes archive of system located at the <path>"
+	echo "    -e <exclude> an additional exclude directory (one dir one -e, do not use it with *)"
+	echo "    -i <include> an additional include. This has higher precedence than -e, -t, and -s"
+	echo "    -h           display this help message."
 
 	if [[ "$1" -ge 0 ]]; 	then
 		exit "$1"
@@ -105,6 +109,7 @@ while [[ $# -gt 0 ]]; do
 	#args[${#args[*]}]=$1  # save first non-option argument (a.k.a. positional argument)
 	shift                 # remove saved arg
 done
+
 
 # checks if run as root:
 #if [[ "$(id -u)" -ne 0 ]]; then
