@@ -11,6 +11,8 @@ setup() {
     f test/lib/modules/"$TEST_UNAME"/mod.ko
     f test/lib64/modules/"$TEST_UNAME"/mod.ko
     f test/dev/sda
+    f test/dev/console
+    f test/dev/null
     f test/proc/cpuinfo
     f test/run/pid
     d test/sys/fs
