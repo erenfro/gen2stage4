@@ -270,7 +270,7 @@ if ! $optQuiet; then
 	echo
 	echo "COMMAND LINE PREVIEW:"
 	#echo 'tar' "${tarOptions[@]}" "${tarIncludes[@]}" "${tarExcludes[@]}" -f "$stage4Filename" "${targetPath}"
-	echo 'tar' "${tarOptions[@]}" "${tarIncludes[@]/#/--include=}" "${tarExcludes[@]/#/--exclude=}" -f "${stage4Filename}.${stage4Ext}" "${targetPath}"
+	echo 'tar' "${tarOptions[@]}" "${tarExcludes[@]/#/--exclude=}" -f "${stage4Filename}.${stage4Ext}" "${targetPath}" "${tarIncludes[@]}"
 	#${excludes[@]/#/--exclude=
 	if $optSeperateKernel; then
 		echo
@@ -288,7 +288,7 @@ fi
 # start stage4 creation:
 if $optQuiet; then
 	#echo "Would've worked"
-	tar "${tarOptions[@]}" "${tarIncludes[@]/#/--include=}" "${tarExcludes[@]/#/--exclude=}" -f "${stage4Filename}.${stage4Ext}" "${targetPath}"
+	tar "${tarOptions[@]}" "${tarExcludes[@]/#/--exclude=}" -f "${stage4Filename}.${stage4Ext}" "${targetPath}" "${tarIncludes[@]}"
 	if [[ "$optSeperateKernel" ]]
 	then
 		tar "${tarOptions[@]}" -f "${stage4Filename}.ksrc.${stage4Ext}" "${targetPath}usr/src/linux-$(uname -r)"
