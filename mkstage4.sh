@@ -288,7 +288,7 @@ fi
 # start stage4 creation:
 if $optQuiet; then
 	#echo "Would've worked"
-	tar "${tarOptions[@]}" "${tarExcludes[@]/#/--exclude=}" -f "${stage4Filename}.${stage4Ext}" "${targetPath}" "${tarIncludes[@]}"
+	tar "${tarOptions[@]}" "${tarIncludes[@]}" "${tarExcludes[@]/#/--exclude=}" -f "${stage4Filename}.${stage4Ext}" "${targetPath}"
 	if [[ "$optSeperateKernel" ]]
 	then
 		tar "${tarOptions[@]}" -f "${stage4Filename}.ksrc.${stage4Ext}" "${targetPath}usr/src/linux-$(uname -r)"
