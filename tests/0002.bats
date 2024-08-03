@@ -17,12 +17,12 @@ teardown() {
     assert_tar_includes test/usr/bin/ping
 }
 
-@test "/usr/bin/lost+found is excluded" {
-    assert_tar_excludes test/usr/bin/lost+found
+@test "/usr/bin/lost+found is included" {
+    assert_tar_includes test/usr/bin/lost+found
 }
 
-@test "/lost+found is excluded" {
-    assert_tar_excludes test/lost+found
+@test "/lost+found is included" {
+    assert_tar_includes test/lost+found
 }
 
 # vim: ft=bash

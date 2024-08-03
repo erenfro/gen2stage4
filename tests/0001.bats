@@ -40,8 +40,8 @@ teardown() {
     assert_tar_includes test/usr/bin/ping
 }
 
-@test "/usr/bin/lost+found is included" {
-    assert_tar_includes test/usr/bin/lost+found
+@test "/usr/bin/lost+found is excluded" {
+    assert_tar_excludes test/usr/bin/lost+found
 }
 
 @test "/usr/src/linux-uname/.config is included" {
@@ -169,8 +169,8 @@ teardown() {
     assert_tar_includes test/var/log/portage/elog/.keep_sys-apps_portage-0
 }
 
-@test "/home/user/.bash_history is included" {
-    assert_tar_includes test/home/user/.bash_history
+@test "/home/user/.bash_history is excluded" {
+    assert_tar_excludes test/home/user/.bash_history
 }
 
 @test "/root/.bash_history is included" {
