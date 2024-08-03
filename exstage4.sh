@@ -97,9 +97,9 @@ fi
 
 archiveExt="${archiveFile##*.}"
 
-if [[ "${archiveFile%%.$archiveExt}" != *.tar ]]; then
+if [[ "${archiveFile%%."$archiveExt"}" != *.tar ]]; then
 	echo "The stage file you are trying to unpack (\`$archiveFile\`) does not appear to be an archived TAR file"
-	echo "${archiveFile%%.$archiveExt}"
+	echo "${archiveFile%%."$archiveExt"}"
 	exit 1
 fi
 

@@ -152,17 +152,11 @@ if [[ -z "${compressAvail[$optCompressType]}" ]]; then
 	exit 1
 fi
 
-# Shifts pointer to read custom tar options
-#shift
-#mapfile -t OPTIONS <<< "$@"
-# Handle when no options are passed
-#((${#OPTIONS[@]} == 1)) && [ -z "${OPTIONS[0]}" ] && unset OPTIONS
-
+# Check if using seperate kernel archive option
 if $optSeperateKernel; then
 	optUserExclude+=("${targetPath}usr/src/*")
 	optUserExclude+=("${targetPath}lib*/modules/*")
 fi
-
 
 # tarExcludes:
 tarExcludes=(
@@ -198,7 +192,6 @@ tarIncludes=(
 	"var/db/pkg/*"
 )
 
-#tarExcludes+=("${optUserExclude[@]}")
 tarExcludes=("${tarExcludes[@]/#/"$targetPath"}")
 tarIncludes=("${tarIncludes[@]/#/"$targetPath"}")
 
