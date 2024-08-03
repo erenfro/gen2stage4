@@ -27,7 +27,7 @@ teardown() {
 
 @test "-i 'test/home/user/.keep and -e 'user/.*'" {
     assert_tar_excludes test/home/user/.dotfile
-    assert_tar_excludes test/home/user/.keep
+    assert_tar_includes test/home/user/.keep
 }
 
 @test "-i 'test/etc/ssh/config and -e 'ssh'" {
