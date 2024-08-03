@@ -16,7 +16,7 @@ setup() {
 }
 
 teardown() {
-    rm -rf test test.tar.bz2 test.tar.bz2.ksrc test.tar.bz2.kmod
+    rm -rf test test.tar.bz2 test.ksrc.tar.bz2 test.tar.bz2.kmod
 }
 
 @test "/usr/bin/ping is included" {
@@ -60,15 +60,15 @@ teardown() {
 }
 
 @test "/usr/src/linux-$TEST_UNAME/.config is included in ksrc" {
-    assert_tar_includes test/usr/src/linux-"$TEST_UNAME"/.config test.tar.bz2.ksrc
+    assert_tar_includes test/usr/src/linux-"$TEST_UNAME"/.config test.ksrc.tar.bz2
 }
 
 @test "/usr/src/linux-$TEST_UNAME/vmlinux is included in ksrc" {
-    assert_tar_includes test/usr/src/linux-"$TEST_UNAME"/vmlinux test.tar.bz2.ksrc
+    assert_tar_includes test/usr/src/linux-"$TEST_UNAME"/vmlinux test.ksrc.tar.bz2
 }
 
 @test "/usr/src/linux-different-uname/ is excluded in ksrc" {
-    assert_tar_excludes test/usr/src/linux-different-uname/ test.tar.bz2.ksrc
+    assert_tar_excludes test/usr/src/linux-different-uname/ test.ksrc.tar.bz2
 }
 
 @test "/lib/modules/$TEST_UNAME/mod.ko is included in kmod" {

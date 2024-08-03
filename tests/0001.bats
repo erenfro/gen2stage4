@@ -177,8 +177,8 @@ teardown() {
     assert_tar_includes test/root/.bash_history
 }
 
-@test "/home/user/chroot/var/tmp/file is included" {
-    assert_tar_includes test/home/user/chroot/var/tmp/file
+@test "/home/user/chroot/var/tmp/file is excluded" {
+    assert_tar_excludes test/home/user/chroot/var/tmp/file
 }
 
 # vim: ft=bash

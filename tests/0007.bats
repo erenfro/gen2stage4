@@ -25,28 +25,28 @@ teardown() {
 }
 
 @test "-e '/lost+found'" {
-    assert_tar_includes test/usr/bin/lost+found test0.tar.bz2
-    assert_tar_includes test/usr/bin/lost+found
+    assert_tar_excludes test/usr/bin/lost+found test0.tar.bz2
+    assert_tar_excludes test/usr/bin/lost+found
 
-    assert_tar_includes test/lost+found test0.tar.bz2
+    assert_tar_excludes test/lost+found test0.tar.bz2
     assert_tar_excludes test/lost+found
 }
 
 @test "-e 'user/.*'" {
-    assert_tar_includes test/home/user/.dotfile test0.tar.bz2
+    assert_tar_excludes test/home/user/.dotfile test0.tar.bz2
     assert_tar_excludes test/home/user/.dotfile
     assert_tar_includes test/home/user/
 }
 
 @test "-e 'test/home/user/chroot/var/tmp/file'" {
-    assert_tar_includes test/home/user/chroot/var/tmp/file test0.tar.bz2
+    assert_tar_excludes test/home/user/chroot/var/tmp/file test0.tar.bz2
     assert_tar_excludes test/home/user/chroot/var/tmp/file
 }
 
 @test "-e 'ccache/*'" {
-    assert_tar_includes test/home/user/ccache/file test0.tar.bz2
+    assert_tar_excludes test/home/user/ccache/file test0.tar.bz2
     assert_tar_excludes test/home/user/ccache/file
-    assert_tar_includes test/home/user/ccache/
+    assert_tar_excludes test/home/user/ccache/
 
     assert_tar_includes test/root/ccache/file test0.tar.bz2
     assert_tar_excludes test/root/ccache/file
