@@ -1,9 +1,9 @@
-# mkstage4
+# gen2backup
 
-![CI](https://github.com/erenfro/mkstage4/workflows/CI/badge.svg)
-[![GitHub release](https://img.shields.io/github/release/erenfro/mkstage4.svg)](https://GitHub.com/erenfro/mkstage4/releases/)
-[![Gentoo package](https://repology.org/badge/version-for-repo/gentoo/mkstage4.svg?header=Gentoo)](https://repology.org/project/mkstage4/versions)
-[![LiGurOS package](https://repology.org/badge/version-for-repo/liguros_stable/mkstage4.svg?header=LiGurOS)](https://repology.org/project/mkstage4/versions)
+![CI](https://github.com/erenfro/gen2backup/workflows/CI/badge.svg)
+[![GitHub release](https://img.shields.io/github/release/erenfro/gen2backup.svg)](https://GitHub.com/erenfro/gen2backup/releases/)
+[![Gentoo package](https://repology.org/badge/version-for-repo/gentoo/gen2backup.svg?header=Gentoo)](https://repology.org/project/gen2backup/versions)
+[![LiGurOS package](https://repology.org/badge/version-for-repo/liguros_stable/gen2backup.svg?header=LiGurOS)](https://repology.org/project/gen2backup/versions)
 
 This is a Bash script which creates “stage 4” tarballs (i.e. system archives) either for the running system, or a system at a specified mount point.
 The script was inspired by an earlier [mkstage4 script](https://github.com/gregf/bin/blob/master/mkstage4) by Greg Fitzgerald (unmaintained as of 2012) which itself was a revamped edition of the [original mkstage4](http://blinkeye.ch/dokuwiki/doku.php/projects/mkstage4) by Reto Glauser (unmaintained as of 2009).
@@ -13,16 +13,16 @@ The script was inspired by an earlier [mkstage4 script](https://github.com/gregf
 The script can be run directly from its containing folder (and thus, is installed simply by downloading or cloning it from here - and adding run permissions):
 
 ```bash
-git clone https://github.com/TheChymera/mkstage4.git /your/mkstage4/directory
-cd /your/mkstage4/directory
+git clone https://github.com/erenfro/gen2backup.git /your/gen2backup/directory
+cd /your/mkstagen2backupge4/directory
 chmod +x cpstage4.sh exstage4.sh mkstage4.sh
 ```
 
-For [Gentoo Linux](http://en.wikipedia.org/wiki/Gentoo_linux) and [Derivatives](http://en.wikipedia.org/wiki/Category:Gentoo_Linux_derivatives), mkstage4 is also available in [Portage](http://en.wikipedia.org/wiki/Portage_(software)) via the base Gentoo overlay.
+For [Gentoo Linux](http://en.wikipedia.org/wiki/Gentoo_linux) and [Derivatives](http://en.wikipedia.org/wiki/Category:Gentoo_Linux_derivatives), gen2backup is also available in [Portage](http://en.wikipedia.org/wiki/Portage_(software)) via the base Gentoo overlay.
 On any Gentoo system, just run the following command:
 
 ```bash
-emerge app-backup/mkstage4
+emerge app-backup/gen2backup
 ```
 
 ## Usage
