@@ -166,34 +166,34 @@ fi
 #((${#OPTIONS[@]} == 1)) && [ -z "${OPTIONS[0]}" ] && unset OPTIONS
 
 if ((optSeperateKernel)); then
-	optUserExclude+=("--exclude=\"${targetPath}usr/src/*\"")
-	optUserExclude+=("--exclude=\"${targetPath}lib*/modules/*\"")
+	optUserExclude+=("--exclude=${targetPath}usr/src/*")
+	optUserExclude+=("--exclude=${targetPath}lib*/modules/*")
 fi
 
 
 # tarExcludes:
 tarExcludes=(
-	"--exclude=\"${targetPath}dev/*\""
-	"--exclude=\"${targetPath}var/tmp/*\""
-	"--exclude=\"${targetPath}media/*\""
-	"--exclude=\"${targetPath}mnt/*/*\""
-	"--exclude=\"${targetPath}proc/*\""
-	"--exclude=\"${targetPath}run/*\""
-	"--exclude=\"${targetPath}sys/*\""
-	"--exclude=\"${targetPath}tmp/*\""
-	"--exclude=\"${targetPath}var/lock/*\""
-	"--exclude=\"${targetPath}var/log/*\""
-	"--exclude=\"${targetPath}var/run/*\""
-	"--exclude=\"${targetPath}var/lib/docker/*\""
-	"--exclude=\"${targetPath}var/lib/containers/*\""
-	"--exclude=\"${targetPath}var/lib/machines/*\""
-	"--exclude=\"${targetPath}var/lib/libvirt/*\""
+	"--exclude=${targetPath}dev/*"
+	"--exclude=${targetPath}var/tmp/*"
+	"--exclude=${targetPath}media/*"
+	"--exclude=${targetPath}mnt/*/*"
+	"--exclude=${targetPath}proc/*"
+	"--exclude=${targetPath}run/*"
+	"--exclude=${targetPath}sys/*"
+	"--exclude=${targetPath}tmp/*"
+	"--exclude=${targetPath}var/lock/*"
+	"--exclude=${targetPath}var/log/*"
+	"--exclude=${targetPath}var/run/*"
+	"--exclude=${targetPath}var/lib/docker/*"
+	"--exclude=${targetPath}var/lib/containers/*"
+	"--exclude=${targetPath}var/lib/machines/*"
+	"--exclude=${targetPath}var/lib/libvirt/*"
 )
 
 tarExcludesPortage=(
-	"--exclude=\"${targetPath}var/db/repos/*/*\""
-	"--exclude=\"${targetPath}var/cache/distfiles/*\""
-	"--exclude=\"${targetPath}usr/portage/*\""
+	"--exclude=${targetPath}var/db/repos/*/*"
+	"--exclude=${targetPath}var/cache/distfiles/*"
+	"--exclude=${targetPath}usr/portage/*"
 )
 
 tarExcludes+=("${optUserExclude[@]}")
@@ -203,14 +203,14 @@ tarIncludes=()
 tarIncludes+=("${optUserInclude[@]}")
 
 if [[ "$targetPath" == '/' ]]; then
-	tarExcludes+=("--exclude=\"$(realpath "$stage4Filename")\"")
+	tarExcludes+=("--exclude=$(realpath "$stage4Filename")")
 	if $hasPortageQ; then
 		portageRepos=$(portageq get_repos /)
 		for i in ${portageRepos}; do
 			repoPath=$(portageq get_repoPath / "${i}")
-			tarExcludes+=("--exclude=\"${repoPath}/*\"")
+			tarExcludes+=("--exclude=${repoPath}/*")
 		done
-		tarExcludes+=("--exclude=\"$(portageq distdir)/*\"")
+		tarExcludes+=("--exclude=$(portageq distdir)/*")
 	else
 		tarExcludes+=("${tarExcludesPortage[@]}")
 	fi
@@ -219,17 +219,17 @@ else
 fi
 
 if $optExcludeConfidential; then
-	tarExcludes+=("--exclude=\"${targetPath}home/*/.bash_history\"")
-	tarExcludes+=("--exclude=\"${targetPath}root/.bash_history\"")
-	tarExcludes+=("--exclude=\"${targetPath}var/lib/connman/*\"")
+	tarExcludes+=("--exclude=${targetPath}home/*/.bash_history")
+	tarExcludes+=("--exclude=${targetPath}root/.bash_history")
+	tarExcludes+=("--exclude=${targetPath}var/lib/connman/*")
 fi
 
 if $optExcludeBoot; then
-	tarExcludes+=("--exclude=\"${targetPath}boot/*\"")
+	tarExcludes+=("--exclude=${targetPath}boot/*")
 fi
 
 if $optExcludeLost; then
-	tarExcludes+=("--exclude=\"lost+found\"")
+	tarExcludes+=("--exclude=lost+found")
 fi
 
 # Compression options
@@ -248,7 +248,7 @@ tarOptions=(
 	"--use-compress-prog=${compressOptions[*]}"
 )
 
-tarOptions+=(${tarArgs[@]})
+tarOptions+=("${tarArgs[@]}")
 
 # if not in optQuiet mode, this message will be displayed:
 if ! $optQuiet; then
@@ -262,7 +262,7 @@ if ! $optQuiet; then
 	echo "example: \$ $(basename "$0") -s /my-backup --exclude=/etc/ssh/ssh_host*"
 	echo
 	echo "COMMAND LINE PREVIEW:"
-	echo 'tar' "${tarOptions[@]}" "${tarIncludes[@]}" "${tarExcludes[@]}" "${OPTIONS[@]}" -f "$stage4Filename" "${targetPath}"
+	echo 'tar' "${tarOptions[@]}" "${tarIncludes[@]}" "${tarExcludes[@]}" -f "$stage4Filename" "${targetPath}"
 	if $optSeperateKernel; then
 		echo
 		echo 'tar' "${tarOptions[@]}" -f "$stage4Filename.ksrc" "${targetPath}usr/src/linux-$(uname -r)"
@@ -279,7 +279,7 @@ fi
 # start stage4 creation:
 if $optQuiet; then
 	echo "Would've worked"
-	#tar "${tarOptions[@]}" "${tarIncludes[@]}" "${tarExcludes[@]}" "${OPTIONS[@]}" -f "$stage4Filename" "${targetPath}"
+	#tar "${tarOptions[@]}" "${tarIncludes[@]}" "${tarExcludes[@]}" -f "$stage4Filename" "${targetPath}"
 	#if [[ "$optSeperateKernel" ]]
 	#then
 	#	tar "${tarOptions[@]}" -f "$stage4Filename.ksrc" "${targetPath}usr/src/linux-$(uname -r)"
