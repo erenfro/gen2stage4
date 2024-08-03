@@ -1,15 +1,8 @@
 #!/usr/bin/env bash
 
-# checks if run as root:
-if [ "$(whoami)" != 'root' ]
-then
-	echo "$(basename "$0"): must be root."
-	exit 1
-fi
-
 # get available compression types
-declare -A COMPRESS_TYPES
-COMPRESS_TYPES=(
+declare -A compressTypes
+compressTypes=(
 	["bz2"]="bzip2 pbzip2 lbzip2"
 	["gz"]="gzip pigz"
 	["lrz"]="lrzip"
@@ -18,253 +11,250 @@ COMPRESS_TYPES=(
 	["lzo"]="lzop"
 	["xz"]="xz pixz"
 	["zst"]="zstd"
-	)
-declare -A COMPRESS_AVAILABLE
-for ext in "${!COMPRESS_TYPES[@]}"; do
-	for exe in ${COMPRESS_TYPES[${ext}]}; do
+)
+declare -A compressAvail
+for ext in "${!compressTypes[@]}"; do
+	for exe in ${compressTypes[${ext}]}; do
 		BIN=$(command -v "${exe}")
-		if [ "${BIN}" != "" ]; then
-			COMPRESS_AVAILABLE+=(["${ext}"]="${BIN}")
+		if [[ -n "$BIN" ]]; then
+			compressAvail+=(["${ext}"]="$BIN")
 		fi
 	done
 done
 
 # set flag variables to null/default
-EXCLUDE_BOOT=0
-EXCLUDE_CONFIDENTIAL=0
-EXCLUDE_LOST=0
-QUIET=0
-USER_EXCL=()
-USER_INCL=()
-S_KERNEL=0
-HAS_PORTAGEQ=0
-COMPRESS_TYPE="bz2"
+optExcludeBoot=false
+optExcludeConfidential=false
+optExcludeLost=false
+optQuiet=false
+optUserExclude=()
+optUserInclude=()
+optCompressType="bz2"
+optSeperateKernel=false
+hasPortageQ=false
 
-if command -v portageq &>/dev/null
-then
-	HAS_PORTAGEQ=1
+if command -v portageq &>/dev/null; then
+	hasPortageQ=true
 fi
 
-USAGE="Usage:\n\
-	$(basename "$0") [-b -c -k -l -q] [-C <compression-type>] [-s || -t <target-mountpoint>] [-e <additional excludes dir*>] [-i <additional include target>] <archive-filename> [custom-tar-options]\n\
-	-b: excludes boot directory.\n\
-	-c: excludes some confidential files (currently only .bash_history and connman network lists).\n\
-	-k: separately save current kernel modules and src (creates smaller archives and saves decompression time).\n\
-	-l: excludes lost+found directory.\n\
-	-q: activates quiet mode (no confirmation).\n\
-	-C: specify tar compression (default: ${COMPRESS_TYPE}, available: ${!COMPRESS_AVAILABLE[*]}).\n\
-	-s: makes tarball of current system.\n\
-	-t: makes tarball of system located at the <target-mountpoint>.\n\
-	-e: an additional excludes directory (one dir one -e, do not use it with *).\n\
-	-i: an additional target to include. This has higher precedence than -e, -t, and -s.\n\
-	-h: display this help message."
+function showHelp() {
+	echo "Usage:"
+	echo "$(basename "$0") [-b -c -k -l -q] [-C <type>] [-s || -t <target>] [-e <exclude*>] [-i <include>] <archivename> [additional-tar-options]"
+	echo 
+	echo "-b           excludes boot directory"
+	echo "-c           excludes some confidential files (currently only .bash_history and connman network lists)"
+	echo "-k           separately save current kernel modules and src (creates smaller targetArchives and saves decompression time)"
+	echo "-l           excludes lost+found directory"
+	echo "-q           activates quiet mode (no confirmation)"
+	echo "-C <type>    specify tar compression (default: ${optCompressType}, available: ${!compressAvail[*]})"
+	echo "-s           makes tarball of current system"
+	echo "-t <path>    makes tarball of system located at the <targetPath-mountpoint>"
+	echo "-e <exclude> an additional exclude directory (one dir one -e, do not use it with *)"
+	echo "-i <include> an additional include. This has higher precedence than -e, -t, and -s"
+	echo "-h           display this help message."
+
+	if [[ "$1" -ge 0 ]]; 	then
+		exit "$1"
+	else
+		exit 0
+	fi
+}
+
+function errorMsg() {
+	local rc=0
+
+	if [[ "$1" -gt 0 ]]; then
+		rc="$1"
+		shift
+	fi
+
+	echo "$*" >&2
+
+	if [[ "$rc" -gt 0 ]]; then
+		exit "$rc"
+	fi
+}
 
 # reads options:
-while getopts ":t:C:e:i:skqcblh" flag
-do
-	case "$flag" in
-		t)
-			TARGET="$OPTARG"
-			;;
-		s)
-			TARGET="/"
-			;;
-		C)
-			COMPRESS_TYPE="$OPTARG"
-			;;
-		q)
-			QUIET=1
-			;;
-		k)
-			S_KERNEL=1
-			;;
-		c)
-			EXCLUDE_CONFIDENTIAL=1
-			;;
-		b)
-			EXCLUDE_BOOT=1
-			;;
-		l)
-			EXCLUDE_LOST=1
-			;;
-		e)
-			USER_EXCL+=("--exclude=${OPTARG}")
-			;;
-		i)
-			USER_INCL+=("${OPTARG}")
-			;;
-		h)
-			echo -e "$USAGE"
-			exit 0
-			;;
-		\?)
-			echo "Invalid option: -$OPTARG" >&2
-			exit 1
-			;;
-		:)
-			echo "Option -$OPTARG requires an argument." >&2
-			exit 1
-			;;
-	esac
+tarArgs=()
+while [[ $# -gt 0 ]]; do
+	while getopts ":t:C:e:i:skqcblh" flag; do
+		case "$flag" in
+			t)	targetPath="$OPTARG";;
+			s)	targetPath="/";;
+			C)	optCompressType="$OPTARG";;
+			q)	optQuiet=true;;
+			k)	optSeperateKernel=true;;
+			c)	optExcludeConfidential=true;;
+			b)	optExcludeBoot=true;;
+			l)	optExcludeLost=true;;
+			e)	optUserExclude+=("--exclude=${OPTARG}");;
+			i)	optUserInclude+=("$OPTARG");;
+			h)	showHelp 0;;
+			\?)	errorMsg 1 "Invalid option: -$OPTARG";;
+			:)	errorMsg 1 "Option -$OPTARG requires an argument.";;
+		esac
+	done || exit 1
+
+	[[ $OPTIND -gt $# ]] && break # reached the end of parameters
+
+	shift $((OPTIND - 1)) # Free processed options so far
+	OPTIND=1              # we must reset OPTIND
+	if [[ -z "$targetArchive" ]]; then
+		targetArchive=$1
+	else
+		tarArgs[${#tarArgs[*]}]=$1
+	fi
+	#args[${#args[*]}]=$1  # save first non-option argument (a.k.a. positional argument)
+	shift                 # remove saved arg
 done
 
-if [ -z "$TARGET" ]
-then
-	echo "$(basename "$0"): no target specified."
-	echo -e "$USAGE"
+# checks if run as root:
+#if [[ "$(whoami)" != 'root' ]]
+#then
+#	echo "$(basename "$0"): must be root."
+#	exit 1
+#fi
+
+if [[ -z "$targetPath" ]]; then
+	echo "$(basename "$0"): no system path specified"
 	exit 1
 fi
 
-# make sure TARGET path ends with slash
-if [[ "$TARGET" != */ ]]
-then
-	TARGET="${TARGET}/"
+# make sure targetPath path ends with slash
+if [[ "$targetPath" != */ ]]; then
+	targetPath="${targetPath}/"
 fi
 
 # shifts pointer to read mandatory output file specification
-shift $((OPTIND - 1))
-ARCHIVE=$1
+#shift $((OPTIND - 1))
+#targetArchive=${args[0]}
 
 # checks for correct output file specification
-if [ -z "$ARCHIVE" ]
-then
-	echo "$(basename "$0"): no archive file name specified."
-	echo -e "$USAGE"
+if [[ -z "$targetArchive" ]]; then
+	echo "$(basename "$0"): no archive file name specified"
 	exit 1
-fi
-
-# checks for quiet mode (no confirmation)
-if ((QUIET))
-then
-	AGREE="yes"
 fi
 
 # determines if filename was given with relative or absolute path
-if (($(grep -c '^/' <<< "$ARCHIVE") > 0))
-then
-	STAGE4_FILENAME="${ARCHIVE}.tar"
+#if (($(grep -c '^/' <<< "$targetArchive") > 0)); then
+if [[ "$targetArchive" =~ ^\/.* ]]; then
+	stage4Filename="${targetArchive}.tar"
 else
-	STAGE4_FILENAME="$(pwd)/${ARCHIVE}.tar"
+	stage4Filename="$(pwd)/${targetArchive}.tar"
 fi
 
 # Check if compression in option and filename
-if [ -z "$COMPRESS_TYPE" ]
-then
-	echo "$(basename "$0"): no archive compression type specified."
-	echo -e "$USAGE"
+if [[ -z "$optCompressType" ]]; then
+	echo "$(basename "$0"): no archive compression type specified"
 	exit 1
 else
-	STAGE4_FILENAME="${STAGE4_FILENAME}.${COMPRESS_TYPE}"
+	stage4Filename="${stage4Filename}.${optCompressType}"
 fi
 
 # Check if specified type is available
-if [ -z "${COMPRESS_AVAILABLE[$COMPRESS_TYPE]}" ]
-then
-	echo "$(basename "$0"): specified archive compression type not supported."
-	echo "Supported: ${COMPRESS_AVAILABLE[*]}"
+if [[ -z "${compressAvail[$optCompressType]}" ]]; then
+	echo "$(basename "$0"): specified targetArchive compression type not supported."
+	echo "Supported: ${compressAvail[*]}"
 	exit 1
 fi
 
 # Shifts pointer to read custom tar options
-shift
-mapfile -t OPTIONS <<< "$@"
+#shift
+#mapfile -t OPTIONS <<< "$@"
 # Handle when no options are passed
-((${#OPTIONS[@]} == 1)) && [ -z "${OPTIONS[0]}" ] && unset OPTIONS
+#((${#OPTIONS[@]} == 1)) && [ -z "${OPTIONS[0]}" ] && unset OPTIONS
 
-if ((S_KERNEL))
-then
-	USER_EXCL+=("--exclude=${TARGET}usr/src/*")
-	USER_EXCL+=("--exclude=${TARGET}lib*/modules/*")
+if ((optSeperateKernel)); then
+	optUserExclude+=("--exclude=\"${targetPath}usr/src/*\"")
+	optUserExclude+=("--exclude=\"${targetPath}lib*/modules/*\"")
 fi
 
 
-# Excludes:
-EXCLUDES=(
-	"--exclude=${TARGET}dev/*"
-	"--exclude=${TARGET}var/tmp/*"
-	"--exclude=${TARGET}media/*"
-	"--exclude=${TARGET}mnt/*/*"
-	"--exclude=${TARGET}proc/*"
-	"--exclude=${TARGET}run/*"
-	"--exclude=${TARGET}sys/*"
-	"--exclude=${TARGET}tmp/*"
-	"--exclude=${TARGET}var/lock/*"
-	"--exclude=${TARGET}var/log/*"
-	"--exclude=${TARGET}var/run/*"
-	"--exclude=${TARGET}var/lib/docker/*"
+# tarExcludes:
+tarExcludes=(
+	"--exclude=\"${targetPath}dev/*\""
+	"--exclude=\"${targetPath}var/tmp/*\""
+	"--exclude=\"${targetPath}media/*\""
+	"--exclude=\"${targetPath}mnt/*/*\""
+	"--exclude=\"${targetPath}proc/*\""
+	"--exclude=\"${targetPath}run/*\""
+	"--exclude=\"${targetPath}sys/*\""
+	"--exclude=\"${targetPath}tmp/*\""
+	"--exclude=\"${targetPath}var/lock/*\""
+	"--exclude=\"${targetPath}var/log/*\""
+	"--exclude=\"${targetPath}var/run/*\""
+	"--exclude=\"${targetPath}var/lib/docker/*\""
+	"--exclude=\"${targetPath}var/lib/containers/*\""
+	"--exclude=\"${targetPath}var/lib/machines/*\""
+	"--exclude=\"${targetPath}var/lib/libvirt/*\""
 )
 
-EXCLUDES_DEFAULT_PORTAGE=(
-	"--exclude=${TARGET}var/db/repos/*/*"
-	"--exclude=${TARGET}var/cache/distfiles/*"
-	"--exclude=${TARGET}usr/portage/*"
+tarExcludesPortage=(
+	"--exclude=\"${targetPath}var/db/repos/*/*\""
+	"--exclude=\"${targetPath}var/cache/distfiles/*\""
+	"--exclude=\"${targetPath}usr/portage/*\""
 )
 
-EXCLUDES+=("${USER_EXCL[@]}")
+tarExcludes+=("${optUserExclude[@]}")
 
-INCLUDES=(
-)
+tarIncludes=()
 
-INCLUDES+=("${USER_INCL[@]}")
+tarIncludes+=("${optUserInclude[@]}")
 
-if [ "$TARGET" == '/' ]
-then
-	EXCLUDES+=("--exclude=$(realpath "$STAGE4_FILENAME")")
-	if ((HAS_PORTAGEQ))
-	then
-		PORTAGEQ_REPOS=$(portageq get_repos /)
-		for i in ${PORTAGEQ_REPOS}; do
-			REPO_PATH=$(portageq get_repo_path / "${i}")
-			EXCLUDES+=("--exclude=${REPO_PATH}/*")
+if [[ "$targetPath" == '/' ]]; then
+	tarExcludes+=("--exclude=\"$(realpath "$stage4Filename")\"")
+	if $hasPortageQ; then
+		portageRepos=$(portageq get_repos /)
+		for i in ${portageRepos}; do
+			repoPath=$(portageq get_repoPath / "${i}")
+			tarExcludes+=("--exclude=\"${repoPath}/*\"")
 		done
-		EXCLUDES+=("--exclude=$(portageq distdir)/*")
+		tarExcludes+=("--exclude=\"$(portageq distdir)/*\"")
 	else
-		EXCLUDES+=("${EXCLUDES_DEFAULT_PORTAGE[@]}")
+		tarExcludes+=("${tarExcludesPortage[@]}")
 	fi
 else
-	EXCLUDES+=("${EXCLUDES_DEFAULT_PORTAGE[@]}")
+	tarExcludes+=("${tarExcludesPortage[@]}")
 fi
 
-if ((EXCLUDE_CONFIDENTIAL))
-then
-	EXCLUDES+=("--exclude=${TARGET}home/*/.bash_history")
-	EXCLUDES+=("--exclude=${TARGET}root/.bash_history")
-	EXCLUDES+=("--exclude=${TARGET}var/lib/connman/*")
+if $optExcludeConfidential; then
+	tarExcludes+=("--exclude=\"${targetPath}home/*/.bash_history\"")
+	tarExcludes+=("--exclude=\"${targetPath}root/.bash_history\"")
+	tarExcludes+=("--exclude=\"${targetPath}var/lib/connman/*\"")
 fi
 
-if ((EXCLUDE_BOOT))
-then
-	EXCLUDES+=("--exclude=${TARGET}boot/*")
+if $optExcludeBoot; then
+	tarExcludes+=("--exclude=\"${targetPath}boot/*\"")
 fi
 
-if ((EXCLUDE_LOST))
-then
-	EXCLUDES+=("--exclude=lost+found")
+if $optExcludeLost; then
+	tarExcludes+=("--exclude=\"lost+found\"")
 fi
 
 # Compression options
-COMP_OPTIONS=("${COMPRESS_AVAILABLE[$COMPRESS_TYPE]}")
-if [[ "${COMPRESS_AVAILABLE[$COMPRESS_TYPE]}" == *"/xz" ]]
-then
-	COMP_OPTIONS+=( "-T0" )
+compressOptions=("${compressAvail[$optCompressType]}")
+if [[ "${compressAvail[$optCompressType]}" == *"/xz" ]]; then
+	compressOptions+=("-T0")
 fi
 
 # Generic tar options:
-TAR_OPTIONS=(
+tarOptions=(
 	-cpP
 	--ignore-failed-read
 	"--xattrs-include=*.*"
 	--numeric-owner
 	"--checkpoint=.500"
-	"--use-compress-prog=${COMP_OPTIONS[*]}"
-	)
+	"--use-compress-prog=${compressOptions[*]}"
+)
 
-# if not in quiet mode, this message will be displayed:
-if [[ "$AGREE" != 'yes' ]]
-then
+tarOptions+=(${tarArgs[@]})
+
+# if not in optQuiet mode, this message will be displayed:
+if ! $optQuiet; then
 	echo "Are you sure that you want to make a stage 4 tarball of the system"
 	echo "located under the following directory?"
-	echo "$TARGET"
+	echo "$targetPath"
 	echo
 	echo "WARNING: since all data is saved by default the user should exclude all"
 	echo "security- or privacy-related files and directories, which are not"
@@ -272,25 +262,27 @@ then
 	echo "example: \$ $(basename "$0") -s /my-backup --exclude=/etc/ssh/ssh_host*"
 	echo
 	echo "COMMAND LINE PREVIEW:"
-	echo 'tar' "${TAR_OPTIONS[@]}" "${INCLUDES[@]}" "${EXCLUDES[@]}" "${OPTIONS[@]}" -f "$STAGE4_FILENAME" "${TARGET}"
-	if ((S_KERNEL))
-	then
+	echo 'tar' "${tarOptions[@]}" "${tarIncludes[@]}" "${tarExcludes[@]}" "${OPTIONS[@]}" -f "$stage4Filename" "${targetPath}"
+	if $optSeperateKernel; then
 		echo
-		echo 'tar' "${TAR_OPTIONS[@]}" -f "$STAGE4_FILENAME.ksrc" "${TARGET}usr/src/linux-$(uname -r)"
-		echo 'tar' "${TAR_OPTIONS[@]}" -f "$STAGE4_FILENAME.kmod" "${TARGET}lib"*"/modules/$(uname -r)"
+		echo 'tar' "${tarOptions[@]}" -f "$stage4Filename.ksrc" "${targetPath}usr/src/linux-$(uname -r)"
+		echo 'tar' "${tarOptions[@]}" -f "$stage4Filename.kmod" "${targetPath}lib"*"/modules/$(uname -r)"
 	fi
 	echo
 	echo -n 'Type "yes" to continue or anything else to quit: '
 	read -r AGREE
+	if [[ "${AGREE,,}" == "yes" ]]; then
+		optQuiet=true
+	fi
 fi
 
 # start stage4 creation:
-if [ "$AGREE" == 'yes' ]
-then
-	tar "${TAR_OPTIONS[@]}" "${INCLUDES[@]}" "${EXCLUDES[@]}" "${OPTIONS[@]}" -f "$STAGE4_FILENAME" "${TARGET}"
-	if ((S_KERNEL))
-	then
-		tar "${TAR_OPTIONS[@]}" -f "$STAGE4_FILENAME.ksrc" "${TARGET}usr/src/linux-$(uname -r)"
-		tar "${TAR_OPTIONS[@]}" -f "$STAGE4_FILENAME.kmod" "${TARGET}lib"*"/modules/$(uname -r)"
-	fi
+if $optQuiet; then
+	echo "Would've worked"
+	#tar "${tarOptions[@]}" "${tarIncludes[@]}" "${tarExcludes[@]}" "${OPTIONS[@]}" -f "$stage4Filename" "${targetPath}"
+	#if [[ "$optSeperateKernel" ]]
+	#then
+	#	tar "${tarOptions[@]}" -f "$stage4Filename.ksrc" "${targetPath}usr/src/linux-$(uname -r)"
+	#	tar "${tarOptions[@]}" -f "$stage4Filename.kmod" "${targetPath}lib"*"/modules/$(uname -r)"
+	#fi
 fi
