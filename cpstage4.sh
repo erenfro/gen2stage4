@@ -1,192 +1,218 @@
 #!/usr/bin/env bash
 
-# checks if run as root:
-if [ "$(whoami)" != 'root' ]
-then
-	echo "$(basename "$0"): must be root."
-	exit 1
-fi
-
 # set flag variables to null/default
-EXCLUDE_BOOT=0
-EXCLUDE_LOST=0
-QUIET=0
-HAS_PORTAGEQ=0
+optExcludeBoot=false
+optExcludeConfidential=false
+optExcludeLost=true
+optQuiet=false
+optUserExclude=()
 
-if command -v portageq &>/dev/null
-then
-	HAS_PORTAGEQ=1
-fi
 
-USAGE="Usage:\n\
-	$(basename "$0") [-b -c -k -l -q] [-e <additional excludes dir*>] <source> <destination>\n\
-	Positional Arguments:\n\
-		<source>: from where to copy system files.\n\
-		<destination>: where to copy system files to.\n\
-	Flags:\n\
-		-b: excludes boot directory.\n\
-		-c: excludes some confidential files (currently only .bash_history and connman network lists).\n\
-		-e: an additional excludes directory (one dir one -e, donot use it with *).\n\
-		-l: excludes lost+found directory.\n\
-		-q: activate quiet mode (no confirmation).\n\
-		-h: display this help message."
+function showHelp() {
+	echo "Usage:"
+	echo "$(basename "$0") [-b -c -l -q] [-s || -t <target>] [-e <exclude>...] [-i <include>...] <dest> [-- [rsync-opts]]"
+	echo "Position Arguments:"
+	echo "    <dest>       destination path to copy system files to"
+	echo "    [rsync-opts] additional options to pass to rsync command"
+	echo
+	echo "Options:"
+	echo "    -b           excludes boot directory"
+	echo "    -c           excludes some confidential files (currently only .bash_history and connman network lists)"
+	echo "    -l           includes lost+found directory"
+	echo "    -q           activates quiet mode (no confirmation)"
+	echo "    -s           makes copy of current system"
+	echo "    -t <path>    makes copy of system located at the <path>"
+	echo "    -e <exclude> an additional exclude directory (one dir one -e, do not use it with *)"
+	echo "    -i <include> an additional include. This has higher precedence than -e, -t, and -s"
+	echo "    -h           display this help message."
+
+	if [[ "$1" -ge 0 ]]; 	then
+		exit "$1"
+	else
+		exit 0
+	fi
+}
+
+function errorMsg() {
+	local rc=0
+
+	if [[ "$1" -gt 0 ]]; then
+		rc="$1"
+		shift
+	fi
+
+	echo "$*" >&2
+
+	if [[ "$rc" -gt 0 ]]; then
+		exit "$rc"
+	fi
+}
+
 
 # reads options:
-while getopts ":e:bcelqh" flag
-do
-	case "$flag" in
-		c)
-			EXCLUDE_CONFIDENTIAL=1
-			;;
-		b)
-			EXCLUDE_BOOT=1
-			;;
-		l)
-			EXCLUDE_LOST=1
-			;;
-		e)
-			USER_EXCL+=("--exclude=${OPTARG}")
-			;;
-		q)
-			QUIET=1
-			;;
-		h)
-			echo -e "$USAGE"
-			exit 0
-			;;
-		\?)
-			echo "Invalid option: -$OPTARG" >&2
-			exit 1
-			;;
-		:)
-			echo "Option -$OPTARG requires an argument." >&2
-			exit 1
-			;;
-	esac
+while [[ $# -gt 0 ]]; do
+	while getopts ":t:e:i:sqcblh" flag; do
+		case "$flag" in
+			t)	sourcePath="$OPTARG";;
+			s)	sourcePath="/";;
+			q)	optQuiet=true;;
+			c)	optExcludeConfidential=true;;
+			b)	optExcludeBoot=true;;
+			l)	optExcludeLost=false;;
+			e)	optUserExclude+=("$OPTARG");;
+			i)	optUserInclude+=("$OPTARG");;
+			h)	showHelp 0;;
+			\?)	errorMsg 1 "Invalid option: -$OPTARG";;
+			:)	errorMsg 1 "Option -$OPTARG requires an argument.";;
+		esac
+	done || exit 1
+
+	[[ $OPTIND -gt $# ]] && break # reached the end of parameters
+
+	shift $((OPTIND - 1)) # Free processed options so far
+	OPTIND=1              # we must reset OPTIND
+	if [[ -z "$targetPath" ]]; then
+		targetPath=$1
+	else
+		rsyncArgs[${#rsyncArgs[*]}]=$1
+	fi
+	#args[${#args[*]}]=$1  # save first non-option argument (a.k.a. positional argument)
+	shift                 # remove saved arg
 done
 
-# shifts pointer to read mandatory output file specification
-shift $((OPTIND - 1))
-SOURCE=${1}
-DESTINATION=${2}
 
-if [ -z "$SOURCE" ]
-then
-	echo "$(basename "$0"): no source specified."
-	echo -e "$USAGE"
+# checks if run as root:
+#if [[ "$(id -u)" -ne 0 ]]; then
+#	echo "$(basename "$0"): must run as root"
+#	exit 250
+#fi
+
+if [[ -z "$sourcePath" ]]; then
+	echo "$(basename "$0"): no source path specified"
 	exit 1
-fi
-if [ -z "$DESTINATION" ]
-then
-	echo "$(basename "$0"): no source specified."
-	echo -e "$USAGE"
+elif [[ ! -d "$sourcePath" ]]; then
+	echo "$(basename "$0"): no source path does not exist"
 	exit 1
+elif [[ "$sourcePath" != */ ]]; then
+	# make sure source path ends with slash
+	sourcePath="${sourcePath}/"
 fi
 
-# make sure SOURCE path ends with slash
-if [[ "$SOURCE" != */ ]]
-then
-	SOURCE="${SOURCE}/"
-fi
-# make sure DESTINATION path ends with slash
-if [[ "$DESTINATION" != */ ]]
-then
-	DESTINATION="${DESTINATION}/"
-fi
-
-# checks for quiet mode (no confirmation)
-if ((QUIET))
-then
-	AGREE="yes"
+if [[ -z "$targetPath" ]]; then
+	echo "$(basename "$0"): no destination path specified"
+	exit 1
+elif [[ ! -d "$targetPath" ]]; then
+	echo "$(basename "$0"): destination path (\`$targetPath\`) does not exist"
+	exit 1
+elif [[ "$targetPath" != */ ]]; then
+	# make sure destination path ends with slash
+	targetPath="${targetPath}/"
 fi
 
 # Excludes:
-EXCLUDES=(
-	"--exclude=${SOURCE}dev/*"
-	"--exclude=${SOURCE}var/tmp/*"
-	"--exclude=${SOURCE}media/*"
-	"--exclude=${SOURCE}mnt/*/*"
-	"--exclude=${SOURCE}proc/*"
-	"--exclude=${SOURCE}run/*"
-	"--exclude=${SOURCE}sys/*"
-	"--exclude=${SOURCE}tmp/*"
-	"--exclude=${SOURCE}var/lock/*"
-	"--exclude=${SOURCE}var/log/*"
-	"--exclude=${SOURCE}var/run/*"
-	"--exclude=${SOURCE}var/lib/docker/*"
+syncExcludes=(
+	"dev/*"
+	"var/tmp/*"
+	"media/*"
+	"mnt/*/*"
+	"proc/*"
+	"run/*"
+	"sys/*"
+	"tmp/*"
+	"var/lock/*"
+	"var/log/*"
+	"var/run/*"
+	"var/lib/docker/*"
+	"var/lib/containers/*"
+	"var/lib/machines/*"
+	"var/lib/libvirt/*"
+	"var/lib/lxd/*"
+	"home/*/*"
 )
 
-EXCLUDES_DEFAULT_PORTAGE=(
-	"--exclude=${SOURCE}var/db/repos/gentoo/*"
-	"--exclude=${SOURCE}var/cache/distfiles/*"
-	"--exclude=${SOURCE}usr/portage/*"
+#EXCLUDES_DEFAULT_PORTAGE=(
+syncExcludesPortage=(
+	"var/db/repos/*/*"
+	"var/cache/distfiles/*"
+	"var/cache/binpkgs/*"
+	"usr/portage/*"
 )
 
-EXCLUDES+=("${USER_EXCL[@]}")
+syncIncludes=(
+	"dev/console"
+	"dev/null"
+	"var/db/pkg/*"
+)
 
-if [ "$SOURCE" == '/' ]
-then
-	if ((HAS_PORTAGEQ))
-	then
-		PORTAGEQ_REPOS=$(portageq get_repos /)
-		for i in ${PORTAGEQ_REPOS}; do
-			REPO_PATH=$(portageq get_repo_path / "${i}")
-			EXCLUDES+=("--exclude=${REPO_PATH}/*")
+syncExcludes=("${syncExcludes[@]/#/"$sourcePath"}")
+syncIncludes=("${syncIncludes[@]/#/"$sourcePath"}")
+
+if [[ "$sourcePath" == '/' ]]; then
+	if command -v portageq &>/dev/null; then
+		portageRepos=$(portageq get_repos /)
+		for i in ${portageRepos}; do
+			repoPath=$(portageq get_repo_path / "${i}")
+			syncExcludes+=("${repoPath}/*")
 		done
-		EXCLUDES+=("--exclude=$(portageq distdir)/*")
+		syncExcludes+=("$(portageq distdir)/*")
+		syncExcludes+=("$(portageq pkgdir)/*")
 	else
-		EXCLUDES+=("${EXCLUDES_DEFAULT_PORTAGE[@]}")
+		syncExcludes+=("${syncExcludesPortage[@]/#/"/"}")
 	fi
 else
-	EXCLUDES+=("${EXCLUDES_DEFAULT_PORTAGE[@]}")
+	syncExcludes+=("${syncExcludesPortage[@]/#/"$sourcePath"}")
 fi
 
-if ((EXCLUDE_BOOT))
-then
-	EXCLUDES+=("--exclude=${SOURCE}boot/*")
+if $optExcludeConfidential; then
+	syncExcludes+=("${sourcePath}home/*/.bash_history")
+	syncExcludes+=("${sourcePath}root/.bash_history")
+	syncExcludes+=("${sourcePath}var/lib/connman/*")
 fi
 
-if ((EXCLUDE_CONFIDENTIAL))
-then
-	EXCLUDES+=("--exclude=${SOURCE}home/*/.bash_history")
-	EXCLUDES+=("--exclude=${SOURCE}root/.bash_history")
-	EXCLUDES+=("--exclude=${SOURCE}var/lib/connman/*")
+if $optExcludeBoot; then
+	syncExcludes+=("${sourcePath}boot/*")
 fi
 
-if ((EXCLUDE_LOST))
-then
-	EXCLUDES+=("--exclude=lost+found")
+if $optExcludeLost; then
+	syncExcludes+=("lost+found")
 fi
 
-# Generic tar options:
-RSYNC_OPTIONS=(
+syncExcludes+=("${optUserExclude[@]}")
+syncIncludes+=("${optUserInclude[@]}")
+
+# Generic rsync options:
+rsyncOptions=(
 	-avxHAXS
 	--numeric-ids
 	"--info=progress2"
-	)
+)
+
+rsyncOptions+=("${rsyncArgs[@]}")
 
 # if not in quiet mode, this message will be displayed:
-if [[ "$AGREE" != 'yes' ]]
-then
+if ! $optQuiet; then
 	echo "Are you sure that you want to copy system files located under"
-	echo "$SOURCE"
+	echo "$sourcePath"
 	echo "to the following directory"
-	echo "$DESTINATION"
+	echo "$targetPath"
 	echo
 	echo "WARNING: since all data is copied by default the user should exclude all"
 	echo "security- or privacy-related files and directories, which are not"
 	echo "already excluded, manually per cmdline."
-	echo "example: \$ $(basename "$0") --exclude=/etc/ssh/ssh_host* <source> <destination>"
+	echo "example: \$ $(basename "$0") -s -e \"/etc/ssh/ssh_host*\" <destination>"
 	echo
 	echo "COMMAND LINE PREVIEW:"
-	echo 'rsync' "${RSYNC_OPTIONS[@]}" "${EXCLUDES[@]}" "${SOURCE}" "${DESTINATION}"
+	echo 'rsync' "${rsyncOptions[@]}" "${syncIncludes[@]/#/--include=}" "${syncExcludes[@]/#/--exclude=}" "$sourcePath" "$targetPath"
 	echo
 	echo -n 'Type "yes" to continue or anything else to quit: '
-	read -r AGREE
+	read -r promptAgree
+	if [[ "${promptAgree,,}" == "yes" ]]; then
+		optQuiet=true
+	fi
 fi
 
 # start stage4 creation:
-if [ "$AGREE" == 'yes' ]
-then
-	rsync "${RSYNC_OPTIONS[@]}" "${EXCLUDES[@]}" "${SOURCE}" "${DESTINATION}"
+if $optQuiet; then
+	echo "Would've worked"
+	#rsync "${rsyncOptions[@]}" "${syncExcludes[@]/#/--exclude=}" "$sourcePath" "$targetPath"
 fi
