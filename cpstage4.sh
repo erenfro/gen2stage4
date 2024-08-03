@@ -82,10 +82,10 @@ done
 
 
 # checks if run as root:
-#if [[ "$(id -u)" -ne 0 ]]; then
-#	echo "$(basename "$0"): must run as root"
-#	exit 250
-#fi
+if [[ "$(id -u)" -ne 0 ]]; then
+	echo "$(basename "$0"): must run as root"
+	exit 250
+fi
 
 if [[ -z "$sourcePath" ]]; then
 	echo "$(basename "$0"): no source path specified"
@@ -213,6 +213,6 @@ fi
 
 # start stage4 creation:
 if $optQuiet; then
-	echo "Would've worked"
-	#rsync "${rsyncOptions[@]}" "${syncExcludes[@]/#/--exclude=}" "$sourcePath" "$targetPath"
+	#echo "Would've worked"
+	rsync "${rsyncOptions[@]}" "${syncExcludes[@]/#/--exclude=}" "$sourcePath" "$targetPath"
 fi

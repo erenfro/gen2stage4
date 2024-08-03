@@ -112,10 +112,10 @@ done
 
 
 # checks if run as root:
-#if [[ "$(id -u)" -ne 0 ]]; then
-#	echo "$(basename "$0"): must run as root"
-#	exit 250
-#fi
+if [[ "$(id -u)" -ne 0 ]]; then
+	echo "$(basename "$0"): must run as root"
+	exit 250
+fi
 
 if [[ -z "$targetPath" ]]; then
 	echo "$(basename "$0"): no system path specified"
@@ -287,11 +287,11 @@ fi
 
 # start stage4 creation:
 if $optQuiet; then
-	echo "Would've worked"
-	#tar "${tarOptions[@]}" "${tarIncludes[@]/#/--include=}" "${tarExcludes[@]/#/--exclude=}" -f "${stage4Filename}.${stage4Ext}" "${targetPath}"
-	#if [[ "$optSeperateKernel" ]]
-	#then
-	#	tar "${tarOptions[@]}" -f "${stage4Filename}.ksrc.${stage4Ext}" "${targetPath}usr/src/linux-$(uname -r)"
-	#	tar "${tarOptions[@]}" -f "${stage4Filename}.kmod.${stage4Ext}" "${targetPath}lib"*"/modules/$(uname -r)"
-	#fi
+	#echo "Would've worked"
+	tar "${tarOptions[@]}" "${tarIncludes[@]/#/--include=}" "${tarExcludes[@]/#/--exclude=}" -f "${stage4Filename}.${stage4Ext}" "${targetPath}"
+	if [[ "$optSeperateKernel" ]]
+	then
+		tar "${tarOptions[@]}" -f "${stage4Filename}.ksrc.${stage4Ext}" "${targetPath}usr/src/linux-$(uname -r)"
+		tar "${tarOptions[@]}" -f "${stage4Filename}.kmod.${stage4Ext}" "${targetPath}lib"*"/modules/$(uname -r)"
+	fi
 fi
