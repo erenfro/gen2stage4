@@ -1,7 +1,7 @@
 # gen2stage4
 
-![CI](https://github.com/erenfro/gen2stage4/workflows/CI/badge.svg)
-[![GitHub release](https://img.shields.io/github/release/erenfro/gen2stage4.svg)](https://GitHub.com/erenfro/gen2stage4/releases/)
+![CI](https://github.com/linux-help/gen2stage4/workflows/CI/badge.svg)
+[![GitHub release](https://img.shields.io/github/release/linux-help/gen2stage4.svg)](https://GitHub.com/linux-help/gen2stage4/releases/)
 [![Gentoo package](https://repology.org/badge/version-for-repo/gentoo/gen2stage4.svg?header=Gentoo)](https://repology.org/project/gen2stage4/versions)
 [![LiGurOS package](https://repology.org/badge/version-for-repo/liguros_stable/gen2stage4.svg?header=LiGurOS)](https://repology.org/project/gen2stage4/versions)
 
@@ -13,7 +13,7 @@ The script was inspired by an earlier [mkstage4 script](https://github.com/gregf
 The script can be run directly from its containing folder (and thus, is installed simply by downloading or cloning it from here - and adding run permissions):
 
 ```bash
-git clone https://github.com/erenfro/gen2stage4.git /your/gen2stage4/directory
+git clone https://github.com/linux-help/gen2stage4.git /your/gen2stage4/directory
 cd /your/gen2stage4/directory
 chmod +x gen2sync gen2extract gen2stage4
 ```
