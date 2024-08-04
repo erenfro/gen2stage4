@@ -191,7 +191,6 @@ tarExcludesPortage=(
 tarIncludes=(
 	"dev/console"
 	"dev/null"
-	"var/db/pkg/*"
 )
 
 tarExcludes=("${tarExcludes[@]/#/"$targetPath"}")
@@ -263,7 +262,7 @@ if ! $optQuiet; then
 	echo "example: \$ $(basename "$0") -s /my-backup --exclude=/etc/ssh/ssh_host*"
 	echo
 	echo "COMMAND LINE PREVIEW:"
-	echo 'tar' "${tarOptions[@]}" "${tarExcludes[@]/#/--exclude=}" -f "${stage4Filename}.${stage4Ext}" "${targetPath}" "${tarIncludes[@]}"
+	echo 'tar' "${tarOptions[@]}" "${tarIncludes[@]}" "${tarExcludes[@]/#/--exclude=}" -f "${stage4Filename}.${stage4Ext}" "${targetPath}"
 	if $optSeperateKernel; then
 		echo
 		echo 'tar' "${tarOptions[@]}" -f "${stage4Filename}.ksrc.${stage4Ext}" "${targetPath}usr/src/linux-$(uname -r)"
@@ -280,8 +279,7 @@ fi
 # start stage4 creation:
 if $optQuiet; then
 	tar "${tarOptions[@]}" "${tarIncludes[@]}" "${tarExcludes[@]/#/--exclude=}" -f "${stage4Filename}.${stage4Ext}" "${targetPath}"
-	if [[ "$optSeperateKernel" ]]
-	then
+	if "$optSeperateKernel"; then
 		tar "${tarOptions[@]}" -f "${stage4Filename}.ksrc.${stage4Ext}" "${targetPath}usr/src/linux-$(uname -r)"
 		tar "${tarOptions[@]}" -f "${stage4Filename}.kmod.${stage4Ext}" "${targetPath}lib"*"/modules/$(uname -r)"
 	fi
