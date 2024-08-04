@@ -76,7 +76,6 @@ while [[ $# -gt 0 ]]; do
 	else
 		rsyncArgs[${#rsyncArgs[*]}]=$1
 	fi
-	#args[${#args[*]}]=$1  # save first non-option argument (a.k.a. positional argument)
 	shift                 # remove saved arg
 done
 
@@ -213,6 +212,5 @@ fi
 
 # start stage4 creation:
 if $optQuiet; then
-	#echo "Would've worked"
 	rsync "${rsyncOptions[@]}" "${syncExcludes[@]/#/--exclude=}" "$sourcePath" "$targetPath"
 fi

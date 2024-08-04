@@ -159,6 +159,5 @@ fi
 
 # start stage4 creation:
 if $optQuiet; then
-	#echo "Would've worked"
 	tar "${tarOptions[@]}" -f "$archiveFile" -C "$targetPath"
 fi

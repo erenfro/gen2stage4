@@ -106,7 +106,6 @@ while [[ $# -gt 0 ]]; do
 	else
 		tarArgs[${#tarArgs[*]}]=$1
 	fi
-	#args[${#args[*]}]=$1  # save first non-option argument (a.k.a. positional argument)
 	shift                 # remove saved arg
 done
 
@@ -134,7 +133,6 @@ if [[ -z "$targetArchive" ]]; then
 fi
 
 # determines if filename was given with relative or absolute path
-#if (($(grep -c '^/' <<< "$targetArchive") > 0)); then
 if [[ "$targetArchive" =~ ^\/.* ]]; then
 	stage4Filename="${targetArchive}"
 else
@@ -146,7 +144,6 @@ if [[ -z "$optCompressType" ]]; then
 	echo "$(basename "$0"): no archive compression type specified"
 	exit 1
 else
-	#stage4Filename="${stage4Filename}.${optCompressType}"
 	stage4Ext="tar.${optCompressType}"
 fi
 
@@ -202,10 +199,6 @@ tarIncludes=("${tarIncludes[@]/#/"$targetPath"}")
 
 if [[ "$targetPath" == '/' ]]; then
 	tarExcludes+=("$(realpath "${stage4Filename}")*")
-	#if $optSeperateKernel; then
-	#	tarExcludes+=("$(realpath "${stage4Filename}.ksrc.${stage4Ext}")")
-	#	tarExcludes+=("$(realpath "${stage4Filename}.kmod.${stage4Ext}")")
-	#fi
 	if command -v portageq &>/dev/null; then
 		portageRepos=$(portageq get_repos /)
 		for i in ${portageRepos}; do
@@ -270,9 +263,7 @@ if ! $optQuiet; then
 	echo "example: \$ $(basename "$0") -s /my-backup --exclude=/etc/ssh/ssh_host*"
 	echo
 	echo "COMMAND LINE PREVIEW:"
-	#echo 'tar' "${tarOptions[@]}" "${tarIncludes[@]}" "${tarExcludes[@]}" -f "$stage4Filename" "${targetPath}"
 	echo 'tar' "${tarOptions[@]}" "${tarExcludes[@]/#/--exclude=}" -f "${stage4Filename}.${stage4Ext}" "${targetPath}" "${tarIncludes[@]}"
-	#${excludes[@]/#/--exclude=
 	if $optSeperateKernel; then
 		echo
 		echo 'tar' "${tarOptions[@]}" -f "${stage4Filename}.ksrc.${stage4Ext}" "${targetPath}usr/src/linux-$(uname -r)"
@@ -288,7 +279,6 @@ fi
 
 # start stage4 creation:
 if $optQuiet; then
-	#echo "Would've worked"
 	tar "${tarOptions[@]}" "${tarIncludes[@]}" "${tarExcludes[@]/#/--exclude=}" -f "${stage4Filename}.${stage4Ext}" "${targetPath}"
 	if [[ "$optSeperateKernel" ]]
 	then
