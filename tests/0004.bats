@@ -9,7 +9,7 @@ setup() {
 }
 
 teardown() {
-    rm -rf test test.tar.bz2
+    rm -rf test test.tar.xz
 }
 
 @test "/boot/kernel is excluded" {

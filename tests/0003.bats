@@ -16,7 +16,7 @@ setup() {
 }
 
 teardown() {
-    rm -rf test test.tar.bz2 test.ksrc.tar.bz2 test.kmod.tar.bz2
+    rm -rf test test.tar.xz test.ksrc.tar.xz test.kmod.tar.xz
 }
 
 @test "/usr/bin/ping is included" {
@@ -60,31 +60,31 @@ teardown() {
 }
 
 @test "/usr/src/linux-$TEST_UNAME/.config is included in ksrc" {
-    assert_tar_includes test/usr/src/linux-"$TEST_UNAME"/.config test.ksrc.tar.bz2
+    assert_tar_includes test/usr/src/linux-"$TEST_UNAME"/.config test.ksrc.tar.xz
 }
 
 @test "/usr/src/linux-$TEST_UNAME/vmlinux is included in ksrc" {
-    assert_tar_includes test/usr/src/linux-"$TEST_UNAME"/vmlinux test.ksrc.tar.bz2
+    assert_tar_includes test/usr/src/linux-"$TEST_UNAME"/vmlinux test.ksrc.tar.xz
 }
 
 @test "/usr/src/linux-different-uname/ is excluded in ksrc" {
-    assert_tar_excludes test/usr/src/linux-different-uname/ test.ksrc.tar.bz2
+    assert_tar_excludes test/usr/src/linux-different-uname/ test.ksrc.tar.xz
 }
 
 @test "/lib/modules/$TEST_UNAME/mod.ko is included in kmod" {
-    assert_tar_includes test/lib/modules/"$TEST_UNAME"/mod.ko test.kmod.tar.bz2
+    assert_tar_includes test/lib/modules/"$TEST_UNAME"/mod.ko test.kmod.tar.xz
 }
 
 @test "/lib64/modules/$TEST_UNAME/mod.ko is included in kmod" {
-    assert_tar_includes test/lib64/modules/"$TEST_UNAME"/mod.ko test.kmod.tar.bz2
+    assert_tar_includes test/lib64/modules/"$TEST_UNAME"/mod.ko test.kmod.tar.xz
 }
 
 @test "/lib/modules/different-uname/ is excluded in kmod" {
-    assert_tar_excludes test/lib/modules/different-uname/ test.kmod.tar.bz2
+    assert_tar_excludes test/lib/modules/different-uname/ test.kmod.tar.xz
 }
 
 @test "/lib64/modules/different-uname/ is excluded in kmod" {
-    assert_tar_excludes test/lib64/modules/different-uname/ test.kmod.tar.bz2
+    assert_tar_excludes test/lib64/modules/different-uname/ test.kmod.tar.xz
 }
 
 # vim: ft=bash

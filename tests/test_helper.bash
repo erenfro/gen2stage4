@@ -32,18 +32,18 @@ f() {
 
 assert_tar_includes() {
     test -f "${1}" || test -d "${1}"
-    tar --list -f "${2-test.tar.bz2}" | grep -q "^${1}$"
+    tar --list -f "${2-test.tar.xz}" | grep -q "^${1}$"
 }
 
 assert_tar_includes_partial() {
-    tar --list -f "${2-test.tar.bz2}" | grep -q "${1}"
+    tar --list -f "${2-test.tar.xz}" | grep -q "${1}"
 }
 
 assert_tar_excludes() {
     test -f "${1}" || test -d "${1}"
-    ! tar --list -f "${2-test.tar.bz2}" | grep -q "^${1}$"
+    ! tar --list -f "${2-test.tar.xz}" | grep -q "^${1}$"
 }
 
 assert_tar_excludes_partial() {
-    ! tar --list -f "${2-test.tar.bz2}" | grep -q "${1}"
+    ! tar --list -f "${2-test.tar.xz}" | grep -q "${1}"
 }

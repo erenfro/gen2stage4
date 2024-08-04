@@ -22,7 +22,7 @@ setup() {
 }
 
 teardown() {
-    rm -rf test test.tar.bz2
+    rm -rf test test.tar.xz
 }
 
 @test "-i 'test/home/user/.keep and -e 'user/.*'" {
