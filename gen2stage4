@@ -265,7 +265,7 @@ if ! $optQuiet; then
 	echo
 	echo "WARNING: since all data is saved by default the user should exclude all"
 	echo "security- or privacy-related files and directories, which are not"
-	echo "already excluded by mkstage4 options (such as -c), manually per cmdline."
+	echo "already excluded by gen2stage4 options (such as -c), manually per cmdline."
 	echo "example: \$ $(basename "$0") -s /my-backup --exclude=/etc/ssh/ssh_host*"
 	echo
 	echo "COMMAND LINE PREVIEW:"

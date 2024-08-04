@@ -29,7 +29,7 @@ setup() {
     f test/var/lib/docker/image
     f test/var/log/messages
     f test/var/log/portage/elog/.keep_sys-apps_portage-0
-    mkstage4.sh -q -t test test
+    gen2stage4 -q -t test test
 }
 
 teardown() {

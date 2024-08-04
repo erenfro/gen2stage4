@@ -3,12 +3,12 @@
 test_directory="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 export PATH="$test_directory/..:$PATH"
 
-# export so that uname hook in mkstage4.sh has access to var
+# export so that uname hook in gen2stage4 has access to var
 export TEST_UNAME="test-uname"
 uname() { echo "$TEST_UNAME"; }
 export -f uname
 
-# bypasses mkstage4.sh root check
+# bypasses gen2stage4 root check
 whoami() { echo "root"; }
 export -f whoami
 

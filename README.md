@@ -15,7 +15,7 @@ The script can be run directly from its containing folder (and thus, is installe
 ```bash
 git clone https://github.com/erenfro/gen2backup.git /your/gen2backup/directory
 cd /your/mkstagen2backupge4/directory
-chmod +x cpstage4.sh exstage4.sh mkstage4.sh
+chmod +x gen2sync gen2extract gen2stage4
 ```
 
 For [Gentoo Linux](http://en.wikipedia.org/wiki/Gentoo_linux) and [Derivatives](http://en.wikipedia.org/wiki/Category:Gentoo_Linux_derivatives), gen2backup is also available in [Portage](http://en.wikipedia.org/wiki/Portage_(software)) via the base Gentoo overlay.
@@ -27,9 +27,9 @@ emerge app-backup/gen2backup
 
 ## Usage
 
-*If you are running the script from the containing folder (first install method) please make sure you use the e.g. `./mkstage4.sh` command instead of just `mkstage4`!*
+*If you are running the script from the containing folder (first install method) please make sure you use the e.g. `./gen2stage4` command instead of just `gen2stage4`!*
 
-Note that the extension (e.g. `.tar.xz`) will be automatically appended to the `archive_name` string which you specify in calling the `mkstage4` command.
+Note that the extension (e.g. `.tar.xz`) will be automatically appended to the `archive_name` string which you specify in calling the `gen2stage4` command.
 This is done based on the compression type, which can be specifiled via the `-C` parameter, if another compression than the default (`bz2`, creating files ending in `.tar.bz2`) is desired.
 
 ### Examples
@@ -37,67 +37,87 @@ This is done based on the compression type, which can be specifiled via the `-C`
 Archive your current system (mounted at /):
 
 ```bash
-mkstage4 -s archive_name
+gen2stage4 -s archive_name
 ```
 
-Archive a system located at a custom mount point:
+Archive a system located at a custom path:
 
 ```bash
-mkstage4 -t /custom/mount/point archive_name
+gen2stage4 -t /custom/path archive_name
 ```
 
 Copy a system to a separate drive, e.g. for quick backup.
 
 ```bash
-cpstage4 / /run/media/myuser/mybackupdrive
+gen2sync -s /run/media/myuser/mybackupdrive
+```
+
+Copy a system located at a custom path:
+
+```bash
+gen2sync -t /custom/path /run/media/myuser/mybackupdrive
 ```
 
 ### Command line arguments
 
 ```console
 Usage:
-	mkstage4.sh [-b -c -k -l -q] [-C <compression-type>] [-s || -t <target-mountpoint>] [-e <additional excludes dir*>] [-i <additional include target>] <archive-filename> [custom-tar-options]
-	-b: excludes boot directory.
-	-c: excludes some confidential files (currently only .bash_history and connman network lists).
-	-k: separately save current kernel modules and src (creates smaller archives and saves decompression time).
-	-l: excludes lost+found directory.
-	-q: activates quiet mode (no confirmation).
-	-C: specify tar compression (default: bz2, available: lz4 xz bz2 zst gz).
-	-s: makes tarball of current system.
-	-t: makes tarball of system located at the <target-mountpoint>.
-	-e: an additional excludes directory (one dir one -e, donot use it with *).
-	-i: an additional target to include. This has higher precedence than -e, -t, and -s.
-	-h: displays help message.
+gen2stage4 [-b -c -k -l -q] [-C <type>] [-s || -t <target>] [-e <exclude>...] [-i <include>...] <archive> [-- [tar-opts]]
+Position Arguments:
+    <archive>    archive name to create with optional path
+    [tar-opts]   additional options to pass to tar command
+
+Options:
+    -b           excludes boot directory
+    -c           excludes some confidential files (currently only .bash_history and connman network lists)
+    -k           separately save current kernel modules and src (creates smaller targetArchives and saves decompression time)
+    -l           includes lost+found directory
+    -q           activates quiet mode (no confirmation)
+    -C <type>    specify tar compression (default: ${optCompressType}, available: ${!compressAvail[*]})
+    -s           makes archive of current system
+    -t <path>    makes archive of system located at the <path>
+    -e <exclude> an additional exclude directory (one dir one -e, do not use it with *)
+    -i <include> an additional include. This has higher precedence than -e, -t, and -s
+    -h           display this help message.
 ```
 
 ## System Tarball Extraction
 
 ### Automatic (Multi-threaded)
 
-We provide a script for convenient extraction, `exstage4`, which is shipped with this package.
-Currently it simply automates the Multi-threaded extraction selection listed below and otherwise has no functionality except checking that the file name looks sane.
-If in doubt, use one of the explicit extraction methods described below.
-Otherwise, you can extract an archive inplace with:
+Provides is a script for convenient extraction, `gen2extract`, which is shipped with this package. Currently it simply automates the Multi-threaded extraction selection listed below and otherwise has no functionality except checking that the file name looks sane.
+If in doubt, use one of the explicit extraction methods described below. Otherwise, you can extract an archive inplace with:
 
 ```bash
-exstage4 archive_name.tar.bz2
+gen2extract -s archive_name.tar.bz2
 ```
+To extract in the current directory, or:
+
+```bash
+gen2extract -t /target/path archive_name.tar.bz2
+```
+To extract to the target path.
 
 ### Explicit Single-threaded
 
-Tarballs created with mkstage4 can be extracted with:
+Archives created with gen2stage4 can also be extracted with tar as well.
 
 To preserve binary attributes and use numeric owner identifiers, you can simply append the relevant flags to the respective `tar` commands, e.g.:
 
 ```bash
-tar xvjpf archive_name.tar.bz2 --xattrs-include='*.*' --numeric-owner
+tar xvpf archive_name.tar.bz2 --xattrs-include='*.*' --numeric-owner
 ```
+To extract in the current directory, or:
+```bash
+tar xvpf archive_name.tar.bz2 --xattrs-include='*.*' --numeric-owner -C /target/path
+```
+To extract to the target path.
 
 If you use the `-k` option, extract the `src` and modules archives separately:
 
 ```bash
-tar xvjpf archive_name.tar.bz2.kmod
-tar xvjpf archive_name.tar.bz2.ksrc
+tar xvpf archive_name.kmod.tar.bz2
+tar xvpf archive_name.ksrc.tar.bz2
 ```
 
 ### Explicit Multi-threaded
@@ -163,4 +183,3 @@ tar -I unpigz -xvf archive_name.tar.gz --xattrs-include='*.*' --numeric-owner
 
 * `-C zstd`:
   * **[zstd](https://facebook.github.io/zstd/)** - in Portage as **[app-arch/zstd](https://packages.gentoo.org/packages/app-arch/zstd)**, (parallel)
-

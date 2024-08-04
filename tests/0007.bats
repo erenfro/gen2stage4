@@ -10,8 +10,8 @@ setup() {
     f test/home/user/ccache/file
     f test/root/ccache/file
     f test/etc/secrets/key
-    mkstage4.sh -q -t test test0
-    mkstage4.sh \
+    gen2stage4 -q -t test test0
+    gen2stage4 \
         -e 'test/lost+found' \
         -e 'user/.*' \
         -e 'test/home/user/chroot/var/tmp/file' \

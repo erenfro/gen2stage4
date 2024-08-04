@@ -6,7 +6,7 @@ setup() {
     f test/usr/bin/ping
     f test/usr/bin/lost+found
     f test/lost+found
-    mkstage4.sh -q -l -t test test
+    gen2stage4 -q -l -t test test
 }
 
 teardown() {

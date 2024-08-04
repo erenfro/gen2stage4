@@ -7,7 +7,7 @@ setup() {
     f test/var/db/repos/science/sci-biology/fsl/ebuild
     f test/var/cache/distfiles/mkstage4.tar.gz
     f test/usr/portage/Manifest
-    mkstage4.sh -q -t test test
+    gen2stage4 -q -t test test
 }
 
 teardown() {

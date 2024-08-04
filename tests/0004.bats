@@ -5,7 +5,7 @@ load test_helper
 setup() {
     f test/boot/kernel
     d test/boot/boot
-    mkstage4.sh -b -q -t test test
+    gen2stage4 -b -q -t test test
 }
 
 teardown() {

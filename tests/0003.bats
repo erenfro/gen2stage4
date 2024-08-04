@@ -12,7 +12,7 @@ setup() {
     f test/lib64/modules/"$TEST_UNAME"/mod.ko
     f test/lib/modules/different-uname/mod.ko
     f test/lib64/modules/different-uname/mod.ko
-    mkstage4.sh -k -q -t test test
+    gen2stage4 -k -q -t test test
 }
 
 teardown() {

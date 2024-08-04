@@ -6,7 +6,7 @@ setup() {
     f test/var/lib/connman/file
     f test/root/.bash_history
     f test/home/user/.bash_history
-    mkstage4.sh -c -q -t test test
+    gen2stage4 -c -q -t test test
 }
 
 teardown() {

@@ -10,7 +10,7 @@ setup() {
     f test/boot/boot
     f test/boot/kernel
     f test/mnt/5/media
-    mkstage4.sh \
+    gen2stage4 \
         -i 'test/home/user/.keep' \
         -e 'user/.*' \
         -i 'test/etc/ssh/config' \
