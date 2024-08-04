@@ -144,23 +144,30 @@ Similarly to other compressors, `gzip` uses a separate binary for parallel decom
 tar -I unpigz -xvf archive_name.tar.gz --xattrs-include='*.*' --numeric-owner
 ```
 
+#### `zst`
+
+```bash
+tar -I 'zstd -T0' -xvf archive_name.tar.gz --xattrs-include='*.*' --numeric-owner
+```
+
 ## Dependencies
 
 *Please note that these are very basic dependencies and should already be included in any Linux system.*
 
-* **[Bash](https://en.wikipedia.org/wiki/Bash_(Unix_shell))** - in [Portage](http://en.wikipedia.org/wiki/Portage_(software)) as **[app-shells/bash](https://packages.gentoo.org/packages/app-shells/bash)**
-* **[tar](https://en.wikipedia.org/wiki/Tar_(computing))** - in Portage as **[app-arch/tar](https://packages.gentoo.org/packages/app-arch/tar)**
-* **[bzip2](https://gitlab.com/federicomenaquintero/bzip2)** - in Portage as **[app-arch/bzip2](https://packages.gentoo.org/packages/app-arch/bzip2)** (single thread, default compression)
-
+* **[Bash](https://www.gnu.org/software/bash/)** - in [Portage](http://en.wikipedia.org/wiki/Portage_(software)) as **[app-shells/bash](https://packages.gentoo.org/packages/app-shells/bash)**
+* **[tar](https://www.gnu.org/software/tar/)** - in Portage as **[app-arch/tar](https://packages.gentoo.org/packages/app-arch/tar)**
+* **[xz](https://tukaani.org/xz/)** - in Portage as **[app-arch/xz](https://packages.gentoo.org/packages/app-arch/xz-utils)**, (parallel, default compression)
+* **[rsync](https://rsync.samba.org/)** - in Portage as **[net-misc/rsync](https://packages.gentoo.org/packages/net-misc/rsync)** (used by gen2sync)
 
 **Optionals**:
 *If one the following is installed the archive will be compressed using multiple parallel threads when available, in order of succession:*
 
 * `-C xz`:
-  * **[xz](https://tukaani.org/xz/)** - in Portage as **[app-arch/xz](https://packages.gentoo.org/packages/app-arch/xz-utils)**, (parallel)
+  * **[xz](https://tukaani.org/xz/)** - in Portage as **[app-arch/xz](https://packages.gentoo.org/packages/app-arch/xz-utils)**, (parallel, default compression)
   * **[pixz](https://github.com/vasi/pixz)** - in Portage as **[app-arch/pixz](https://packages.gentoo.org/packages/app-arch/pixz)**, (parallel, indexed)
 
 * `-C bz2`:
+  * **[bzip2](https://gitlab.com/federicomenaquintero/bzip2)** - in Portage as **[app-arch/bzip2](https://packages.gentoo.org/packages/app-arch/bzip2)** (single thread)
   * **[pbzip2](https://launchpad.net/pbzip2/)** - in Portage as **[app-arch/pbzip2](https://packages.gentoo.org/packages/app-arch/pbzip2)**, (parallel)
   * **[lbzip2](https://github.com/kjn/lbzip2/)** - in Portage as **[app-arch/lbzip2](https://packages.gentoo.org/packages/app-arch/lbzip2)**, (parallel, faster and more efficient)
 
@@ -181,5 +188,5 @@ tar -I unpigz -xvf archive_name.tar.gz --xattrs-include='*.*' --numeric-owner
 * `-C lzo`:
   * **[lzop](https://www.lzop.org/)** - in Portage as **[app-arch/lzop](https://packages.gentoo.org/packages/app-arch/lzop)**, (parallel)
 
-* `-C zstd`:
+* `-C zst`:
   * **[zstd](https://facebook.github.io/zstd/)** - in Portage as **[app-arch/zstd](https://packages.gentoo.org/packages/app-arch/zstd)**, (parallel)
