@@ -132,7 +132,7 @@ case "$archiveExt" in
 esac
 
 tarOptions=(
-	"-xv"
+	"-x"
 	"--xattrs-include=*.*"
 	"--numeric-owner"
 	"--use-compress-prog=${compressOptions[*]}"
