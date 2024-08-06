@@ -26,6 +26,7 @@ done
 optExcludeBoot=false
 optExcludeConfidential=false
 optExcludeLost=true
+optExcludePortage=false
 optQuiet=false
 optUserExclude=()
 optUserInclude=()
@@ -43,6 +44,7 @@ function showHelp() {
 	echo "Options:"
 	echo "    -b           excludes boot directory"
 	echo "    -c           excludes some confidential files (currently only .bash_history and connman network lists)"
+	echo "    -p           excludes portage repositories"
 	echo "    -k           separately save current kernel modules and src (creates smaller targetArchives and saves decompression time)"
 	echo "    -l           includes lost+found directory"
 	echo "    -q           activates quiet mode (no confirmation)"
@@ -79,7 +81,7 @@ function errorMsg() {
 # reads options:
 tarArgs=()
 while [[ $# -gt 0 ]]; do
-	while getopts ":t:C:e:i:skqcblh" flag; do
+	while getopts ":t:C:e:i:skqcbplh" flag; do
 		case "$flag" in
 			t)	targetPath="$OPTARG";;
 			s)	targetPath="/";;
@@ -88,6 +90,7 @@ while [[ $# -gt 0 ]]; do
 			k)	optSeperateKernel=true;;
 			c)	optExcludeConfidential=true;;
 			b)	optExcludeBoot=true;;
+			p)	optExcludePortage=true;;
 			l)	optExcludeLost=false;;
 			e)	optUserExclude+=("${OPTARG}");;
 			i)	optUserInclude+=("$OPTARG");;
@@ -183,10 +186,13 @@ tarExcludes=(
 
 tarExcludesPortage=(
 	"var/db/repos/*/*"
-	"var/cache/distfiles/*"
 	"var/cache/binpkgs/*"
 	"usr/portage/*"
 )
+
+if $optExcludePortage; then
+	tarExcludesPortage+=("var/db/repos/*/*")
+fi
 
 tarIncludes=(
 	"dev/console"
@@ -199,11 +205,13 @@ tarIncludes=("${tarIncludes[@]/#/"$targetPath"}")
 if [[ "$targetPath" == '/' ]]; then
 	tarExcludes+=("$(realpath "${stage4Filename}")*")
 	if command -v portageq &>/dev/null; then
-		portageRepos=$(portageq get_repos /)
-		for i in ${portageRepos}; do
-			repoPath=$(portageq get_repo_path / "${i}")
-			tarExcludes+=("${repoPath}/*")
-		done
+		if $optExcludePortage; then
+			portageRepos=$(portageq get_repos /)
+			for i in ${portageRepos}; do
+				repoPath=$(portageq get_repo_path / "${i}")
+				tarExcludes+=("${repoPath}/*")
+			done
+		fi
 		tarExcludes+=("$(portageq distdir)/*")
 		tarExcludes+=("$(portageq pkgdir)/*")
 	else
