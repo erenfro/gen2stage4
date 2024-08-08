@@ -3,9 +3,9 @@
 load test_helper
 
 setup() {
-    f test/var/db/repos/gentoo/app-backup/mkstage4/ebuild
+    f test/var/db/repos/gentoo/app-backup/gen2stage4/ebuild
     f test/var/db/repos/science/sci-biology/fsl/ebuild
-    f test/var/cache/distfiles/mkstage4.tar.gz
+    f test/var/cache/distfiles/gen2stage4.tar.gz
     f test/usr/portage/Manifest
     gen2stage4 -q -t test test
 }
@@ -30,8 +30,8 @@ teardown() {
     assert_tar_excludes_partial test/var/db/repos/gentoo/app-backup
 }
 
-@test "/var/cache/distfiles/mkstage4.tar.gz is excluded" {
-    assert_tar_excludes test/var/cache/distfiles/mkstage4.tar.gz
+@test "/var/cache/distfiles/gen2stage4.tar.gz is excluded" {
+    assert_tar_excludes test/var/cache/distfiles/gen2stage4.tar.gz
 }
 
 @test "/var/cache/distfiles/ is included" {
