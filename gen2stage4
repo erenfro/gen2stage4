@@ -186,7 +186,7 @@ tarExcludes=(
 
 tarExcludesPortage=(
 	"var/cache/binpkgs/*"
-	"var/cache/distiles/*"
+	"var/cache/distfiles/*"
 	"usr/portage/*"
 )
 
