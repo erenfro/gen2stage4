@@ -18,16 +18,16 @@ teardown() {
     assert_tar_includes test/var/db/repos/gentoo/
 }
 
-@test "/var/db/repos/gentoo/app-backup is excluded" {
-    assert_tar_excludes_partial test/var/db/repos/gentoo/app-backup
+@test "/var/db/repos/gentoo/app-backup is included" {
+    assert_tar_includes_partial test/var/db/repos/gentoo/app-backup
 }
 
 @test "/var/db/repos/science/ is included" {
     assert_tar_includes test/var/db/repos/gentoo/
 }
 
-@test "/var/db/repos/science/sci-biology is excluded" {
-    assert_tar_excludes_partial test/var/db/repos/gentoo/app-backup
+@test "/var/db/repos/science/sci-biology is included" {
+    assert_tar_includes_partial test/var/db/repos/gentoo/app-backup
 }
 
 @test "/var/cache/distfiles/gen2stage4.tar.gz is excluded" {
